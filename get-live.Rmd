@@ -1,0 +1,34 @@
+
+get scoresway live games with goalscorers
+
+
+## packages
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(lubridate)
+library(conflicted)
+conflict_prefer("filter", "dplyr")
+source("functions.R")
+```
+
+```{r}
+matches <- c(3454401, 3461782, 3461785, 3440979, 3436416, 3453908)
+matches <- mtch
+```
+
+```{r}
+current <- 0
+```
+
+
+```{r}
+Sys.time()
+l <- update_scores(current, matches)
+current <- l[[1]]
+comparison <- l[[2]]
+# current %>% filter(stat != "FT") -> current
+knitr::kable(comparison)
+```
+

@@ -1,0 +1,45 @@
+get live games from scoresway
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(lubridate)
+```
+
+```{r}
+my_url <- "https://uk.soccerway.com/"
+html <- read_html(my_url)
+```
+
+untangle 
+
+```{r}
+html %>% html_nodes("tr") -> trs
+trs %>% 
+  html_attr("class") %>% 
+  enframe(name = NULL) %>% 
+  filter(str_detect(value, "^group-head")) -> classes
+trs %>% html_nodes("a") %>% 
+  html_attr("href") %>% 
+  enframe(name = NULL) %>% 
+  filter(str_detect(value, "^.*national/")) -> leagues
+bind_cols(classes, leagues) %>% 
+  filter(str_detect(value...1, "live"))
+```
+
+these competitions have live games in them; remains to find the actual live games (might be more than one)
+
+does it work to just grab live games from `games`?
+
+```{r}
+games <- read_rds("~/Documents/r-projects/scoresway/rds/games.rds")
+games %>% mutate(ago = (now() - time_stamp)/dhours(1)) %>% 
+  filter(between(ago, 0, 3)) %>% 
+  select(match, country, comp_name, t1_name, t2_name, time_stamp) -> games
+games %>% 
+  knitr::kable()
+games %>% pull(match) -> mtch
+mtch
+```
+
+this might work and seems to (though may not be efficient)
