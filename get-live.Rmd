@@ -1,34 +1,107 @@
 
-get scoresway live games with goalscorers
+# Live scores
 
-
-## packages
-
-```{r}
+```{r get-live-1, include=FALSE}
 library(tidyverse)
 library(rvest)
 library(lubridate)
+library(progress)
+library(gt)
 library(conflicted)
 conflict_prefer("filter", "dplyr")
 source("functions.R")
 ```
 
-```{r}
-matches <- c(3454401, 3461782, 3461785, 3440979, 3436416, 3453908)
-matches <- mtch
+```{r get-live-2, include=FALSE}
+# if current is null, set it to zero
+current <-read_rds("current.rds")
+last <- read_rds("last.rds")
+# last <- ymd_hm("2021-04-19 17:11", tz = "America/Toronto")
 ```
 
-```{r}
-current <- 0
+```{r get-live-3, include=FALSE}
+last_time_name <- "last_time.rds"
+now_time <- Sys.time()
+last_time <- ifelse(file.exists(last_time_name),
+                    read_rds(last_time_name),
+                    0)
+last_time <- as.POSIXct(last_time, origin = "1970-01-01")
+write_rds(now_time, last_time_name)
+time_diff <- difftime(now_time, last_time)
 ```
 
 
-```{r}
-Sys.time()
-l <- update_scores(current, matches)
+The time now is `r now_time`.
+
+Previously: `r last_time`, `r round(time_diff)` `r units(time_diff)` ago.
+
+```{r get-live-4, echo=FALSE}
+ranks <- read_rds("~/Documents/r-projects/ratings/rating_ranks.rds")
+extra <- c(55096, 55097,
+           61494,
+           62280, 62281, 62282, 62283, 62284, 62285,
+           63484, 63485, 63486, 63490, 63489)
+matches <- get_match_list(last_get = last, 
+                          extra_leagues = extra) # add get_all = TRUE to get every single match, extra_leagues = codes for extra leagues to add (eg uefa, fa cup)
+omits <- c(3457834, 3532639) # remove after 
+matches <- matches[!(matches %in% omits)]
+# glue::glue("Matches to get: {matches}.")
+if (length(matches)==0) stop("no matches")
+```
+
+There are `r length(matches)` matches to get.
+
+```{r get-live-5, include=FALSE}
+l <- update_scores(current, matches, ranks) # check that FTs are not gotten again
+last <- now()
+write_rds(last, "last.rds")
 current <- l[[1]]
+write_rds(current, "current.rds")
 comparison <- l[[2]]
-# current %>% filter(stat != "FT") -> current
-knitr::kable(comparison)
+zero_show <- ifelse(nrow(comparison) == 0, "No games to show.", "")
 ```
+
+
+`r zero_show`
+
+Latest scores:
+
+```{r get-live-6, echo=FALSE, warning=FALSE}
+if (nrow(comparison) > 0) {
+comparison %>% gt() %>% 
+  data_color(
+    columns = c("t1", "t2"),
+    colors = scales::col_factor(
+      palette = "Set3",
+      domain = NULL
+    ),
+  ) 
+}
+```
+
+games ongoing:
+
+
+
+```{r get-live-1-bis, echo=FALSE}
+l[[1]] %>% unnest(info) %>% 
+  group_by(matches) %>%
+  summarize(team_home = first(t1), 
+            team_away = first(t2),
+            cur_score = last(score),
+            cur_stat = last(status)) %>% 
+  knitr::kable()
+beepr::beep(1) 
+```
+
+
+
+
+
+
+
+  
+
+
+
 
